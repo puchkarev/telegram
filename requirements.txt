@@ -1,0 +1,6 @@
+# Communicating on telegram
+telegram==0.0.1
+# Sending images on telegram
+python-telegram-bot==22.0
+# requests from telegram
+requests==2.32.5
