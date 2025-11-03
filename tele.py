@@ -36,7 +36,7 @@ def send_telegram(bot_token: str, chat_token: str, message: str) -> None:
         Returns:
             Nothing
     """
-    print(f"Sending to {bot_token} {chat_token}: {message}")
+    print(f"Sending to {chat_token}: {message}")
     chunk_size = 4090
     max_search_back = 2048
     min_size = 512
@@ -275,7 +275,7 @@ def telegram_set_commands(bot_token: str, commands: Dict[str, Any]) -> None:
 
     try:
         asyncio.run(telegram.Bot(token = bot_token).set_my_commands(commands_dict))
-        print(f"Commands have been successfully set to {bot_token} with {commands.keys()}")
+        print(f"Commands have been successfully set with {commands.keys()}")
     except telegram.error.TelegramError as e:
         print(f'Error setting commands: {e}')
 
