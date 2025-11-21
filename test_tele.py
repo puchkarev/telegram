@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 import os
 import sys
-import submodules.telegram.tele as tele
+import tele
 
 class TestTele(unittest.TestCase):
 
@@ -49,33 +49,33 @@ class TestTele(unittest.TestCase):
         self.assertEqual(updates, {"ok": True, "result": []})
         mock_get.assert_called_with("https://api.telegram.org/botbot_token/getUpdates")
 
-    @patch('submodules.telegram.tele.asyncio.run')
+    @patch('tele.asyncio.run')
     def test_send_telegram_file_image(self, mock_asyncio_run):
         tele.send_telegram_file("bot_token", "chat_token", "image.jpg")
         mock_asyncio_run.assert_called()
 
-    @patch('submodules.telegram.tele.asyncio.run')
+    @patch('tele.asyncio.run')
     def test_send_telegram_file_video(self, mock_asyncio_run):
         tele.send_telegram_file("bot_token", "chat_token", "video.mp4")
         mock_asyncio_run.assert_called()
 
-    @patch('submodules.telegram.tele.asyncio.run')
+    @patch('tele.asyncio.run')
     def test_send_telegram_file_audio(self, mock_asyncio_run):
         tele.send_telegram_file("bot_token", "chat_token", "audio.mp3")
         mock_asyncio_run.assert_called()
     
-    @patch('submodules.telegram.tele.asyncio.run')
+    @patch('tele.asyncio.run')
     def test_send_telegram_file_animation(self, mock_asyncio_run):
         tele.send_telegram_file("bot_token", "chat_token", "animation.gif")
         mock_asyncio_run.assert_called()
 
-    @patch('submodules.telegram.tele.asyncio.run')
+    @patch('tele.asyncio.run')
     def test_send_telegram_file_document(self, mock_asyncio_run):
         tele.send_telegram_file("bot_token", "chat_token", "document.txt")
         mock_asyncio_run.assert_called()
 
-    @patch('submodules.telegram.tele.get_telegram_updates', return_value={"ok": True, "result": []})
-    @patch('submodules.telegram.tele.send_telegram')
+    @patch('tele.get_telegram_updates', return_value={"ok": True, "result": []})
+    @patch('tele.send_telegram')
     def test_main_message(self, mock_send_telegram, mock_get_updates):
         tele.main(['--message', 'test message', '--bot_token', 'bot_token', '--chat_token', 'chat_token'])
         mock_send_telegram.assert_called_with("bot_token", "chat_token", "test message")
