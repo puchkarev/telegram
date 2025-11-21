@@ -295,7 +295,7 @@ def get_telegram_updates(bot_token: str, last_update: int) -> Dict[str, Any]:
     updates = response.json()
     return updates
 
-if __name__ == "__main__":
+def main(argv=None):
     parser = argparse.ArgumentParser(description="Send a telegram message in a chat")
     parser.add_argument("--message", type=str, default="", help="message to send")
     parser.add_argument("--bot_token", type=str, default="", help="bot token for telegram")
@@ -308,7 +308,7 @@ if __name__ == "__main__":
     parser.add_argument("--file", action='extend', nargs='+', help="arbitrary file to send")
     parser.add_argument("--updates", type=int, default=0, help="query updates from bot")
     parser.add_argument("--fetch", type=str, default="", help="fetches a telegram file")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.bot_token == "":
         print("must specify bot token")
@@ -372,4 +372,7 @@ if __name__ == "__main__":
 
     if not sent and len(args.message) > 0:
         send_telegram(args.bot_token, args.chat_token, args.message)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
 
