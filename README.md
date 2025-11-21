@@ -4,6 +4,9 @@
 
 This Python library provides a set of functions to interact with the Telegram Bot API. It allows you to send messages, files (images, videos, audio, documents, and animations), and retrieve updates from your Telegram bot.
 
+The primary reason for this library is to simplify the overall interface and give capability to call this library from command line.
+It has a set of helpful flags that cam be reviewed using the --help flag.
+
 ## Functions
 
 ### `send_telegram(bot_token: str, chat_token: str, message: str) -> None`
