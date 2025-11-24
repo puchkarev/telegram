@@ -5,7 +5,65 @@
 This Python library provides a set of functions to interact with the Telegram Bot API. It allows you to send messages, files (images, videos, audio, documents, and animations), and retrieve updates from your Telegram bot.
 
 The primary reason for this library is to simplify the overall interface and give capability to call this library from command line.
-It has a set of helpful flags that cam be reviewed using the --help flag.
+
+## Command Line Usage
+
+You can use this library directly from the command line to interact with your Telegram bot.
+
+### General Arguments
+
+-   `--bot_token`: **Required**. Your Telegram bot's unique token.
+-   `--chat_token`: The unique identifier for the target chat (required for sending messages/files).
+-   `--message`: The text message or caption to send.
+
+### Examples
+
+**1. Send a Text Message:**
+
+```bash
+python tele.py --bot_token "YOUR_BOT_TOKEN" --chat_token "YOUR_CHAT_ID" --message "Hello from CLI!"
+```
+
+**2. Send an Image with Caption:**
+
+```bash
+python tele.py --bot_token "YOUR_BOT_TOKEN" --chat_token "YOUR_CHAT_ID" --image path/to/image.jpg --message "Check this out!"
+```
+
+**3. Send a Video:**
+
+```bash
+python tele.py --bot_token "YOUR_BOT_TOKEN" --chat_token "YOUR_CHAT_ID" --video path/to/video.mp4
+```
+
+**4. Send Multiple Files:**
+
+```bash
+python tele.py --bot_token "YOUR_BOT_TOKEN" --chat_token "YOUR_CHAT_ID" --image img1.jpg img2.png
+```
+
+**5. Get Updates:**
+
+```bash
+python tele.py --bot_token "YOUR_BOT_TOKEN" --updates 0
+```
+
+**6. Download a File:**
+
+```bash
+python tele.py --bot_token "YOUR_BOT_TOKEN" --fetch "FILE_ID_FROM_TELEGRAM"
+```
+
+### Available Flags
+
+-   `--image`: Send one or more image files.
+-   `--video`: Send one or more video files.
+-   `--audio`: Send one or more audio files.
+-   `--document`: Send one or more document files.
+-   `--animation`: Send one or more animation files (GIFs).
+-   `--file`: Send any arbitrary file (auto-detects type if possible).
+-   `--updates`: Query updates from the bot. Pass `0` or the last update ID.
+-   `--fetch`: Download a file from Telegram using its `file_id`.
 
 ## Functions
 
