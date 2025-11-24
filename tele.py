@@ -4,8 +4,7 @@ import argparse
 import os
 import sys
 import time
-import json
-from typing import Dict, Any, List, Union, Callable
+from typing import Dict, Any, List
 
 def look_for(message: str, char: str, offset: int, max_offset: int) -> int:
     """
@@ -59,6 +58,36 @@ def send_telegram(bot_token: str, chat_token: str, message: str) -> None:
         except Exception as e:
             print(f"Error sending message: {e}")
 
+async def _send_media_helper(bot_token: str, chat_token: str, file_path: str, caption: str, timeout: int, method_name: str, file_arg_name: str) -> None:
+    """
+    Private helper to send various media types to avoid code duplication.
+    """
+    media_type = method_name.split('_')[-1] # e.g. 'photo' from 'send_photo' or 'document' from 'send_document'
+    # Actually, method_name passed will be 'send_photo', 'send_video' etc.
+    # Cleaner to just use method_name for logging? No, let's use file path.
+    print(f"Sending {media_type} to {chat_token}: {file_path} {caption}")
+    try:
+        from telegram.ext import Application
+        application = Application.builder().token(bot_token).build()
+
+        method = getattr(application.bot, method_name)
+        
+        with open(file_path, 'rb') as f:
+            # Construct arguments dynamically
+            kwargs = {
+                'chat_id': chat_token,
+                'caption': caption,
+                'read_timeout': timeout,
+                'write_timeout': timeout,
+                file_arg_name: f
+            }
+            await method(**kwargs)
+        print(f"{media_type.capitalize()} {file_path} sent successfully!")
+    except FileNotFoundError:
+        print(f"Error: {media_type.capitalize()} file not found at \"{file_path}\"")
+    except Exception as e:
+        print(f"Error sending {media_type}: {e}")
+
 async def send_telegram_image(bot_token: str, chat_token: str, image_path: str, caption: str = "", timeout: int = None) -> None:
     """
         Sends a given image via telegram from bot specified by bot_token,
@@ -72,18 +101,7 @@ async def send_telegram_image(bot_token: str, chat_token: str, image_path: str, 
         Returns:
             Nothing
     """
-    print(f"Sending image to {chat_token}: {image_path} {caption}")
-    try:
-        from telegram.ext import Application
-        application = Application.builder().token(bot_token).build()
-
-        with open(image_path, 'rb') as image_file:
-            await application.bot.send_photo(chat_id=chat_token, photo=image_file, caption=caption, read_timeout=timeout, write_timeout=timeout)
-        print(f"Image {image_path} sent successfully!")
-    except FileNotFoundError:
-        print(f"Error: Image file not found at \"{image_path}\"")
-    except Exception as e:
-        print(f"Error sending image: {e}")
+    await _send_media_helper(bot_token, chat_token, image_path, caption, timeout, 'send_photo', 'photo')
 
 async def send_telegram_video(bot_token: str, chat_token: str, video_path: str, caption: str = "", timeout: int = None) -> None:
     """
@@ -98,18 +116,7 @@ async def send_telegram_video(bot_token: str, chat_token: str, video_path: str, 
         Returns:
             Nothing
     """
-    print(f"Sending video to {chat_token}: {video_path} {caption}")
-    try:
-        from telegram.ext import Application
-        application = Application.builder().token(bot_token).build()
-
-        with open(video_path, 'rb') as video_file:
-            await application.bot.send_video(chat_id=chat_token, video=video_file, caption=caption, read_timeout=timeout, write_timeout=timeout)
-        print(f"Video {video_path} sent successfully!")
-    except FileNotFoundError:
-        print(f"Error: Video file not found at {video_path}")
-    except Exception as e:
-        print(f"Error sending video: {e}")
+    await _send_media_helper(bot_token, chat_token, video_path, caption, timeout, 'send_video', 'video')
 
 async def send_telegram_audio(bot_token: str, chat_token: str, audio_path: str, caption: str = "", timeout: int = None) -> None:
     """
@@ -124,18 +131,7 @@ async def send_telegram_audio(bot_token: str, chat_token: str, audio_path: str, 
         Returns:
             Nothing
     """
-    print(f"Sending audio to {chat_token}: {audio_path} {caption}")
-    try:
-        from telegram.ext import Application
-        application = Application.builder().token(bot_token).build()
-
-        with open(audio_path, 'rb') as audio_file:
-            await application.bot.send_audio(chat_id=chat_token, audio=audio_file, caption=caption, read_timeout=timeout, write_timeout=timeout)
-        print(f"Audio {audio_path} sent successfully!")
-    except FileNotFoundError:
-        print(f"Error: Audio file not found at {audio_path}")
-    except Exception as e:
-        print(f"Error sending audio: {e}")
+    await _send_media_helper(bot_token, chat_token, audio_path, caption, timeout, 'send_audio', 'audio')
 
 async def send_telegram_animation(bot_token: str, chat_token: str, animation_path: str, caption: str = "", timeout: int = None) -> None:
     """
@@ -150,18 +146,7 @@ async def send_telegram_animation(bot_token: str, chat_token: str, animation_pat
         Returns:
             Nothing
     """
-    print(f"Sending animation to {chat_token}: {animation_path} {caption}")
-    try:
-        from telegram.ext import Application
-        application = Application.builder().token(bot_token).build()
-
-        with open(animation_path, 'rb') as animation_file:
-            await application.bot.send_animation(chat_id=chat_token, animation=animation_file, caption=caption, read_timeout=timeout, write_timeout=timeout)
-        print(f"Animation {animation_path} sent successfully!")
-    except FileNotFoundError:
-        print(f"Error: Animation file not found at {animation_path}")
-    except Exception as e:
-        print(f"Error sending animation: {e}")
+    await _send_media_helper(bot_token, chat_token, animation_path, caption, timeout, 'send_animation', 'animation')
 
 async def send_telegram_document(bot_token: str, chat_token: str, document_path: str, caption: str = "", timeout: int = None) -> None:
     """
@@ -176,18 +161,7 @@ async def send_telegram_document(bot_token: str, chat_token: str, document_path:
         Returns:
             Nothing
     """
-    print(f"Sending document to {chat_token}: {document_path} {caption}")
-    try:
-        from telegram.ext import Application
-        application = Application.builder().token(bot_token).build()
-
-        with open(document_path, 'rb') as document_file:
-            await application.bot.send_document(chat_id=chat_token, document=document_file, caption=caption, read_timeout=timeout, write_timeout=timeout)
-        print(f"Document {document_path} sent successfully!")
-    except FileNotFoundError:
-        print(f"Error: Document file not found at {document_path}")
-    except Exception as e:
-        print(f"Error sending document: {e}")
+    await _send_media_helper(bot_token, chat_token, document_path, caption, timeout, 'send_document', 'document')
 
 def send_telegram_file(bot_token: str, chat_token: str, filename: str, caption: str = "", timeout: int = None) -> None:
     """
@@ -322,45 +296,24 @@ def main(argv=None):
         get_telegram_file(args.bot_token, "", args.fetch, "./")
 
     sent = False
-    if args.image:
-        for image in args.image:
-            message = args.message
-            if not message:
-                message = image
-            asyncio.run(send_telegram_image(args.bot_token, args.chat_token, image, message, timeout=60))
-            sent = True
+    
+    # List of (argument_values, function_to_call, timeout)
+    media_actions = [
+        (args.image, send_telegram_image, 60),
+        (args.video, send_telegram_video, 180),
+        (args.audio, send_telegram_audio, 60),
+        (args.document, send_telegram_document, 120),
+        (args.animation, send_telegram_animation, 120)
+    ]
 
-    if args.video:
-        for video in args.video:
-            message = args.message
-            if not message:
-                message = video
-            asyncio.run(send_telegram_video(args.bot_token, args.chat_token, video, message, timeout=180))
-            sent = True
-
-    if args.audio:
-        for audio in args.audio:
-            message = args.message
-            if not message:
-                message = audio
-            asyncio.run(send_telegram_audio(args.bot_token, args.chat_token, audio, message, timeout=60))
-            sent = True
-
-    if args.document:
-        for document in args.document:
-            message = args.message
-            if not message:
-                message = document
-            asyncio.run(send_telegram_document(args.bot_token, args.chat_token, document, message, timeout=120))
-            sent = True
-
-    if args.animation:
-        for animation in args.animation:
-            message = args.message
-            if not message:
-                message = animation
-            asyncio.run(send_telegram_document(args.bot_token, args.chat_token, animation, message, timeout=120))
-            sent = True
+    for media_list, func, timeout in media_actions:
+        if media_list:
+            for item in media_list:
+                message = args.message
+                if not message:
+                    message = item
+                asyncio.run(func(args.bot_token, args.chat_token, item, message, timeout=timeout))
+                sent = True
 
     if args.file:
         for file in args.file:
