@@ -253,6 +253,47 @@ def telegram_set_commands(bot_token: str, commands: Dict[str, Any]) -> None:
     except telegram.error.TelegramError as e:
         print(f'Error setting commands: {e}')
 
+class InteractiveBot:
+    """
+    A wrapper around python-telegram-bot Application to handle interactive commands.
+    """
+    def __init__(self, token: str, command_handlers: Dict[str, Callable]):
+        """
+        Initialize the interactive bot.
+        
+        Args:
+            token: Telegram bot token.
+            command_handlers: Dictionary mapping command strings (e.g., "start") to async callback functions.
+                              The callback should accept (update, context).
+        """
+        from telegram.ext import Application, CommandHandler
+        self.application = Application.builder().token(token).build()
+        
+        for command, handler in command_handlers.items():
+            self.application.add_handler(CommandHandler(command, handler))
+            
+    async def start(self):
+        """Initialize and start the bot application."""
+        await self.application.initialize()
+        await self.application.start()
+        await self.application.updater.start_polling()
+        
+    async def stop(self):
+        """Stop and shutdown the bot application."""
+        await self.application.updater.stop()
+        await self.application.stop()
+        await self.application.shutdown()
+        
+    async def send_video(self, chat_id, video_file, caption, read_timeout=120, write_timeout=120):
+        """Send a video using the active application bot instance."""
+        await self.application.bot.send_video(
+            chat_id=chat_id,
+            video=video_file,
+            caption=caption,
+            read_timeout=read_timeout,
+            write_timeout=write_timeout
+        )
+
 def get_telegram_updates(bot_token: str, last_update: int) -> Dict[str, Any]:
     """
         Retrieves the latest updates from telegram.
