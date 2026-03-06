@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 import time
-from typing import Dict, Any, List
+from typing import Dict, Any, Callable, List
 
 def look_for(message: str, char: str, offset: int, max_offset: int) -> int:
     """
