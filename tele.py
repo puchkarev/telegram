@@ -66,27 +66,42 @@ async def _send_media_helper(bot_token: str, chat_token: str, file_path: str, ca
     # Actually, method_name passed will be 'send_photo', 'send_video' etc.
     # Cleaner to just use method_name for logging? No, let's use file path.
     print(f"Sending {media_type} to {chat_token}: {file_path} {caption}")
+    # A None timeout falls back to python-telegram-bot's short default, which times out
+    # on a slow/large upload and (previously) silently DROPPED the image. Use a generous
+    # timeout and RETRY a few times before giving up so a transient timeout can't lose a
+    # rendered panel.
+    if timeout is None:
+        timeout = 120
     try:
         from telegram.ext import Application
-        application = Application.builder().token(bot_token).build()
-
-        method = getattr(application.bot, method_name)
-        
-        with open(file_path, 'rb') as f:
-            # Construct arguments dynamically
-            kwargs = {
-                'chat_id': chat_token,
-                'caption': caption,
-                'read_timeout': timeout,
-                'write_timeout': timeout,
-                file_arg_name: f
-            }
-            await method(**kwargs)
-        print(f"{media_type.capitalize()} {file_path} sent successfully!")
-    except FileNotFoundError:
-        print(f"Error: {media_type.capitalize()} file not found at \"{file_path}\"")
-    except Exception as e:
-        print(f"Error sending {media_type}: {e}")
+    except Exception as e:  # noqa: BLE001
+        print(f"Error sending {media_type}: telegram import failed: {e}")
+        return
+    last_err = None
+    for attempt in range(3):
+        try:
+            application = Application.builder().token(bot_token).build()
+            method = getattr(application.bot, method_name)
+            with open(file_path, 'rb') as f:
+                kwargs = {
+                    'chat_id': chat_token,
+                    'caption': caption,
+                    'read_timeout': timeout,
+                    'write_timeout': timeout,
+                    'connect_timeout': timeout,
+                    file_arg_name: f
+                }
+                await method(**kwargs)
+            print(f"{media_type.capitalize()} {file_path} sent successfully!")
+            return
+        except FileNotFoundError:
+            print(f"Error: {media_type.capitalize()} file not found at \"{file_path}\"")
+            return
+        except Exception as e:  # noqa: BLE001 — usually a transient network/timeout error
+            last_err = e
+            print(f"Error sending {media_type} (attempt {attempt + 1}/3): {e}")
+            await asyncio.sleep(3)
+    print(f"Giving up sending {media_type} after 3 attempts: {last_err}")
 
 async def send_telegram_image(bot_token: str, chat_token: str, image_path: str, caption: str = "", timeout: int = None) -> None:
     """
