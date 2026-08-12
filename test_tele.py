@@ -1,7 +1,5 @@
 import unittest
-from unittest.mock import patch, MagicMock, call
-import os
-import sys
+from unittest.mock import patch, MagicMock
 import tele
 
 class TestTele(unittest.TestCase):
