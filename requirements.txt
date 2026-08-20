@@ -1,6 +1,4 @@
-# Communicating on telegram
-telegram==0.0.1
-# Sending images on telegram
+# Telegram Bot API client (owns the `telegram` import namespace)
 python-telegram-bot==22.0
-# requests from telegram
+# HTTP requests
 requests==2.32.5
