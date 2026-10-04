@@ -24,7 +24,14 @@ def look_for(message: str, char: str, offset: int, max_offset: int) -> int:
             return offset - i
     return -1
 
-def send_telegram(bot_token: str, chat_token: str, message: str) -> None:
+TELEGRAM_CONNECT_TIMEOUT = 10
+TELEGRAM_READ_TIMEOUT = 65
+TELEGRAM_POLL_TIMEOUT_SEC = 50
+TELEGRAM_HTTP_TIMEOUT = (TELEGRAM_CONNECT_TIMEOUT, TELEGRAM_READ_TIMEOUT)
+TELEGRAM_SEND_TIMEOUT = (TELEGRAM_CONNECT_TIMEOUT, 30)
+
+
+def send_telegram(bot_token: str, chat_token: str, message: str, timeout=TELEGRAM_SEND_TIMEOUT) -> None:
     """
         Sends a given message via telegram from bot specified by bot_token,
         to a chat specified by chat_token.
@@ -54,7 +61,7 @@ def send_telegram(bot_token: str, chat_token: str, message: str) -> None:
         try:
             url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
             data = {"chat_id": chat_token, "text": chunk}
-            requests.post(url, data=data)
+            requests.post(url, data=data, timeout=timeout)
         except Exception as e:
             print(f"Error sending message: {e}")
 
@@ -205,7 +212,7 @@ def send_telegram_file(bot_token: str, chat_token: str, filename: str, caption: 
     else:
         asyncio.run(send_telegram_document(bot_token, chat_token, filename, caption, timeout))
 
-def get_telegram_file(bot_token: str, chat_token: str, file_id: str, FILES_DIR: str) -> str:
+def get_telegram_file(bot_token: str, chat_token: str, file_id: str, FILES_DIR: str, timeout=TELEGRAM_HTTP_TIMEOUT) -> str:
     """
         Retrieves a given file from telegram and stores it in FIlES_DIR.
         Args:
@@ -217,7 +224,7 @@ def get_telegram_file(bot_token: str, chat_token: str, file_id: str, FILES_DIR: 
             filename of the file that was stored in the FILES_DIR
     """
     telegram_link = f"https://api.telegram.org/bot{bot_token}/getFile?file_id={file_id}"
-    telegram_response = requests.get(telegram_link)
+    telegram_response = requests.get(telegram_link, timeout=timeout)
     response = telegram_response.json()
 
     if not response["ok"]:
@@ -229,7 +236,7 @@ def get_telegram_file(bot_token: str, chat_token: str, file_id: str, FILES_DIR: 
         return ""
 
     telegram_link = f"https://api.telegram.org/file/bot{bot_token}/{response['result']['file_path']}"
-    telegram_response = requests.get(telegram_link)
+    telegram_response = requests.get(telegram_link, timeout=timeout)
     print("telegram response", response)
 
     if telegram_response.status_code != 200:
@@ -309,19 +316,31 @@ class InteractiveBot:
             write_timeout=write_timeout
         )
 
-def get_telegram_updates(bot_token: str, last_update: int) -> Dict[str, Any]:
+def get_telegram_updates(
+    bot_token: str,
+    last_update: int,
+    poll_timeout: int = TELEGRAM_POLL_TIMEOUT_SEC,
+    timeout=TELEGRAM_HTTP_TIMEOUT,
+) -> Dict[str, Any]:
     """
-        Retrieves the latest updates from telegram.
+        Retrieves the latest updates from telegram using long polling and an explicit socket timeout.
         Args:
             bot_token: unique identifier for the telegram bot
             last_update: the index of the update that was last processed.
+            poll_timeout: Telegram server-side long-polling wait in seconds (default 50s).
+            timeout: requests (connect, read) timeout tuple in seconds (default (10, 65)).
         Returns:
             A json structure with the updates from telegram
     """
-    url = f"https://api.telegram.org/bot{bot_token}/getUpdates"
+    query_parts = []
     if last_update > 0:
-        url = url + "?offset=" + str(last_update + 1)
-    response = requests.get(url)
+        query_parts.append("offset=" + str(last_update + 1))
+    if poll_timeout is not None and int(poll_timeout) > 0:
+        query_parts.append("timeout=" + str(int(poll_timeout)))
+    url = f"https://api.telegram.org/bot{bot_token}/getUpdates"
+    if query_parts:
+        url = url + "?" + "&".join(query_parts)
+    response = requests.get(url, timeout=timeout)
     updates = response.json()
     return updates
 

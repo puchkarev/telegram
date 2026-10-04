@@ -15,7 +15,8 @@ class TestTele(unittest.TestCase):
         tele.send_telegram("bot_token", "chat_token", "test message")
         mock_post.assert_called_with(
             "https://api.telegram.org/botbot_token/sendMessage",
-            data={"chat_id": "chat_token", "text": "test message"}
+            data={"chat_id": "chat_token", "text": "test message"},
+            timeout=(10, 30),
         )
 
     @patch('requests.post')
@@ -31,10 +32,12 @@ class TestTele(unittest.TestCase):
         # Verify first chunk
         first_call_args = mock_post.call_args_list[0]
         self.assertEqual(first_call_args[1]['data']['text'], "a" * 4090)
+        self.assertEqual(first_call_args[1]['timeout'], (10, 30))
         
         # Verify second chunk
         second_call_args = mock_post.call_args_list[1]
         self.assertEqual(second_call_args[1]['data']['text'], "a" * (5000 - 4090))
+        self.assertEqual(second_call_args[1]['timeout'], (10, 30))
 
     @patch('requests.get')
     def test_get_telegram_file(self, mock_get):
@@ -54,6 +57,8 @@ class TestTele(unittest.TestCase):
             filename = tele.get_telegram_file("bot_token", "chat_token", "file_id", ".")
             self.assertTrue(filename.endswith(".jpg"))
             mock_open.assert_called_once()
+            self.assertEqual(mock_get.call_args_list[0][1]['timeout'], (10, 65))
+            self.assertEqual(mock_get.call_args_list[1][1]['timeout'], (10, 65))
 
     @patch('requests.get')
     def test_get_telegram_file_error(self, mock_get):
@@ -75,7 +80,10 @@ class TestTele(unittest.TestCase):
 
         updates = tele.get_telegram_updates("bot_token", 0)
         self.assertEqual(updates, {"ok": True, "result": []})
-        mock_get.assert_called_with("https://api.telegram.org/botbot_token/getUpdates")
+        mock_get.assert_called_with(
+            "https://api.telegram.org/botbot_token/getUpdates?timeout=50",
+            timeout=(10, 65),
+        )
 
     @patch('tele.asyncio.run')
     def test_send_telegram_file_image(self, mock_asyncio_run):
